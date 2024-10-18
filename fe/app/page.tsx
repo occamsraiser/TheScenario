@@ -1,22 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react"
+import { useEffect, useState } from "react";
+import CreateContentModal from "./CreateContentModal";
+import EditContentModal from "./EditContentModal";
+import TableComponent from "./TableComponent";
+import { getAllData, createData, updateDataById, deleteDataById } from "./api.service";
 
 export default () => {
 
-  const revalidatedData = async () => {
-    const result = await fetch(`http://127.0.01:3000/data`, {
-        method: 'GET',
-        mode: 'no-cors',
-    });
-
-    console.log(result);
-
-    return result;
-  }
-  
-  const [state, setState] = useState<Response>();
+  const [state, setState] = useState(null);
+  const [data, setData] = useState([]);
   const [loadData, setLoadData] = useState(true);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [idToEdit, setIdToEdit] = useState(null);
+  const [contentToEdit, setContentToEdit] = useState(null);
 
   useEffect(()=>{
 
@@ -24,28 +21,88 @@ export default () => {
       return;
 
     setLoadData(false)
+    getAllData().then(res=>{
+      setState(res); // this dumps to console, just informational
+      setData(res); // this is used to build the display table
+    });
+  },[loadData])
 
-    revalidatedData()
-    .then(res=>{
-      setState(res)
+  useEffect(()=>{
+    console.log("getAllData is", state);
+  },[state])
+
+  const handleShowEditModal = (id: string, content:string) => {
+    setIdToEdit(id);
+    setContentToEdit(content);
+    setShowEditModal(true);
+  }
+
+  const handleDelete = (id: string) => {
+    deleteDataById(id).then(res=>{
+      setLoadData(true);
     })
-  })
+  }
 
+  const handleCreate = (content: string) => {
+    createData({
+      'user-entry': content,
+      'time': Date()
+    }).then(res=>{
+      setLoadData(true);
+    })
+  }
+
+  const handleEdit = (id: string, content: string) => {
+    updateDataById(id, {
+      'user-entry': content,
+      'time': Date()
+    }).then(res=>{
+      setLoadData(true);
+  })
+  }
+
+  const tableColumns = [
+    {
+      key: "_id",
+      label: "ID",
+    },
+    {
+      key: "content",
+      label: "CONTENT",
+    },
+    {
+      key: "updatedAt",
+      label: "UPDATED AT"
+    },
+    {
+      key: "actions",
+      label: "ACTIONS",
+    },
+  ];
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          This is a empty shell for a Next.js app.<br />
-          Libraray's pre-installed to keep things simple: 
-        </p>
-         <ul>
-            <li>Tailwind CSS - https://tailwindcss.com/</li>
-            <li>Nextui - </li>
-            <li>Formik - </li>
-          </ul>
-          {state && <p>{JSON.stringify(state)}</p>}
+    <main className="center p-4 w-full flex flex-wrap">
+      <div className="p-4">
+        <TableComponent 
+          items={data} 
+          label="Data from backend" 
+          columns={tableColumns} 
+          handleDelete={handleDelete}
+          handleEdit={handleShowEditModal}
+        ></TableComponent>
       </div>
+      <div className="p-4">
+        <CreateContentModal 
+          title="Create Content"
+          handleCreate={handleCreate}
+        ></CreateContentModal>
+      </div>
+      { showEditModal && <EditContentModal 
+                            title="Edit Content"
+                            contentId={idToEdit}
+                            handleEdit={handleEdit}
+                            existingContent={contentToEdit}
+                          ></EditContentModal> }
     </main>
   )
 }
