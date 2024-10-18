@@ -1,4 +1,5 @@
-version: '3.8'
+# version: '3.8'
+# vm -- docker was complaining about the version attribute as it's obsolete
 services:
   be:
     image: node:18
