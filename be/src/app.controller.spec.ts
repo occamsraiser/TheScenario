@@ -20,3 +20,5 @@ describe('AppController', () => {
     });
   });
 });
+
+// VM -- did not add tests as they were out of scope for this exercise
